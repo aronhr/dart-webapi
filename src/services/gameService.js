@@ -82,7 +82,7 @@ const updateGameSession = ({ sessionId, ...data }) => {
 const resetGameSession = (sessionId) => {
     const game = games[sessionId].game;
     if (game) {
-        delete games[sessionId];
+        delete games[sessionId].game;
     }
 };
 
