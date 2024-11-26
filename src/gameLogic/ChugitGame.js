@@ -2,7 +2,7 @@
 
 const GameInterface = require('./GameInterface');
 
-class StandardGame extends GameInterface {
+class ChugitGame extends GameInterface {
     constructor(sessionId, players, startingScore) {
         super(sessionId);
         this.startingScore = startingScore;
@@ -114,4 +114,4 @@ class StandardGame extends GameInterface {
     }
 }
 
-module.exports = StandardGame;
+module.exports = ChugitGame;
