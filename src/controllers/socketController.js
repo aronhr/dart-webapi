@@ -87,6 +87,13 @@ module.exports = (io) => {
                 });
         });
 
+        socket.on('undo', ({ sessionId }) => {
+            if (socket.role !== 'controller') return;
+
+            gameService.undoLastThrow(sessionId);
+            io.in(sessionId).emit('gameState', gameService.getGameSession(sessionId));
+        });
+
         // Handle leave game
         socket.on('leaveGame', ({ sessionId }) => {
             if (socket.role !== 'controller') return;

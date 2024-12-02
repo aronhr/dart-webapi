@@ -81,7 +81,7 @@ class StandardGame extends GameInterface {
 
         player.throwsLeft--;
 
-        if (bust || player.throwsLeft === 0 || this.gameOver) {
+        if (bust || player.throwsLeft <= 0 || this.gameOver) {
             player.throwsLeft = 3;
             player.currentTurnScore = 0;
 
@@ -92,8 +92,50 @@ class StandardGame extends GameInterface {
         }
     }
 
+    undoLastThrow() {
+        if (this.gameOver) {
+            console.error('Game is over. Cannot undo last throw.');
+            throw new Error('Game is over. Cannot undo last throw.');
+        }
+
+        let currentPlayer = this.players[this.currentPlayerIndex];
+        let player = this.playerData[currentPlayer.name];
+        // If the current player has no throws, go back to the previous player
+        if (this.playerData[currentPlayer.name].scores.length === 0 || player.throwsLeft === 3) {
+            currentPlayer = this.players[(this.currentPlayerIndex - 1 + this.players.length) % this.players.length];
+            player = this.playerData[currentPlayer.name];
+
+            player.throwsLeft = 0;
+            // sum last 3 throws
+            player.currentTurnScore = player.scores.slice(-3).reduce((acc, curr) => acc + curr.value * curr.multiplier, 0);
+            this.currentPlayerIndex = (this.currentPlayerIndex - 1 + this.players.length) % this.players.length;
+        }
+
+        console.log('currentPlayer:', currentPlayer);
+
+
+
+        if (player.scores.length === 0) {
+            console.error('No throws to undo.');
+            // throw new Error('No throws to undo.');
+            return;
+        }
+
+        const lastThrow = player.scores.pop();
+        const dartScore = lastThrow.value * lastThrow.multiplier;
+        player.score += dartScore;
+        player.currentTurnScore -= dartScore;
+        player.throwsLeft++;
+
+        if (player.throwsLeft === 3) {
+            player.currentTurnScore = 0;
+        }
+
+        this.events.push(`Last throw by ${currentPlayer.name} (${lastThrow.multiplier} x ${lastThrow.value}) has been undone.`);
+    }
+
     isValidDart(value, multiplier) {
-        const validValues = [...Array(20).keys()].map(n => n + 1).concat([25]);
+        const validValues = [...Array(20).keys()].map(n => n + 1).concat([25, 0]);
         const validMultipliers = [1, 2, 3];
         return validValues.includes(value) && validMultipliers.includes(multiplier);
     }

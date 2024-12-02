@@ -21,6 +21,10 @@ class GameInterface {
         throw new Error('updateScore() must be implemented');
     }
 
+    undoLastThrow() {
+        throw new Error('undoLastThrow() must be implemented');
+    }
+
     checkWinCondition(playerName) {
         throw new Error('checkWinCondition() must be implemented');
     }

@@ -79,6 +79,13 @@ const updateGameSession = ({ sessionId, ...data }) => {
     });
 };
 
+const undoLastThrow = (sessionId) => {
+    const game = games[sessionId].game;
+    if (game) {
+        game.undoLastThrow();
+    }
+};
+
 const resetGameSession = (sessionId) => {
     const game = games[sessionId].game;
     if (game) {
@@ -94,5 +101,6 @@ module.exports = {
     createGameSession,
     getGameSession,
     updateGameSession,
+    undoLastThrow,
     resetGameSession,
 };
