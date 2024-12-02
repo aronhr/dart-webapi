@@ -22,6 +22,7 @@ class StandardGame extends GameInterface {
                 scores: [],
                 throwsLeft: 3,
                 currentTurnScore: 0,
+                winningScore: [],
             };
         });
         this.gameStarted = true;
@@ -81,6 +82,8 @@ class StandardGame extends GameInterface {
 
         player.throwsLeft--;
 
+        player.winningScore = this.calculateThrowsToWin(player.score, player.throwsLeft === 0 ? 3 : player.throwsLeft);
+
         if (bust || player.throwsLeft <= 0 || this.gameOver) {
             player.throwsLeft = 3;
             player.currentTurnScore = 0;
@@ -130,6 +133,7 @@ class StandardGame extends GameInterface {
         if (player.throwsLeft === 3) {
             player.currentTurnScore = 0;
         }
+        player.winningScore = this.calculateThrowsToWin(player.score, player.throwsLeft);
 
         this.events.push(`Last throw by ${currentPlayer.name} (${lastThrow.multiplier} x ${lastThrow.value}) has been undone.`);
     }
@@ -142,6 +146,83 @@ class StandardGame extends GameInterface {
 
     advanceToNextPlayer() {
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+    }
+
+    calculateThrowsToWin(remainingScore, throwsLeft = 3) {
+        if (remainingScore < 2 || remainingScore > 170 || throwsLeft < 1) {
+            return [];
+        }
+
+        const throwOptions = [];
+
+        // Generate all possible throws (singles, doubles, triples)
+        for (let i = 1; i <= 20; i++) {
+            throwOptions.push({ score: i * 3, name: `T${i}` });  // Triple
+            throwOptions.push({ score: i * 2, name: `D${i}` });  // Double
+            throwOptions.push({ score: i, name: `${i}` });       // Single
+        }
+
+        // Add Bull options
+        throwOptions.push({ score: 50, name: 'D25' });  // Double Bull (Bullseye)
+        throwOptions.push({ score: 25, name: '25' });   // Single Bull (Outer Bull)
+
+        // Possible finishing doubles
+        const finishingDoubles = [];
+        for (let i = 1; i <= 20; i++) {
+            finishingDoubles.push({ score: i * 2, name: `D${i}` });
+        }
+        finishingDoubles.push({ score: 50, name: 'D25' });  // Bullseye (Double 25)
+
+        // Build possible sums of throws up to (throwsLeft - 1) throws
+        const possibleSums = new Map();
+
+        function generateSums(currentSum = 0, currentSequence = [], depth = 0) {
+            if (depth >= throwsLeft - 1) {
+                return;
+            }
+            for (const throwOption of throwOptions) {
+                const newSum = currentSum + throwOption.score;
+                const newSequence = currentSequence.concat(throwOption.name);
+
+                // Store all sequences for each sum
+                if (!possibleSums.has(newSum)) {
+                    possibleSums.set(newSum, []);
+                }
+                possibleSums.get(newSum).push(newSequence);
+
+                generateSums(newSum, newSequence, depth + 1);
+            }
+        }
+
+        // Generate possible sums
+        generateSums();
+
+        // Try to find a valid combination
+        for (const doubleThrow of finishingDoubles) {
+            const doubleScore = doubleThrow.score;
+
+            if (doubleScore > remainingScore) continue;
+
+            const remaining = remainingScore - doubleScore;
+
+            // Case 1: Finish with just the double
+            if (remaining === 0 && throwsLeft >= 1) {
+                return [doubleThrow.name];
+            }
+
+            // Check if remaining score can be achieved with available throws
+            if (possibleSums.has(remaining)) {
+                const sequences = possibleSums.get(remaining);
+                for (const sequence of sequences) {
+                    if (sequence.length + 1 <= throwsLeft) {
+                        return [...sequence, doubleThrow.name];
+                    }
+                }
+            }
+        }
+
+        // No valid combination found
+        return [];
     }
 
     checkWinCondition(playerName) {
@@ -159,6 +240,7 @@ class StandardGame extends GameInterface {
                     name: player.name,
                     score: player.score,
                     throwsLeft: player.throwsLeft,
+                    winningScore: player.winningScore,
                 };
             }),
             availableScores: this.availableScores,
