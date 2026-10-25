@@ -1,0 +1,17 @@
+services:
+  dart:
+    build:
+      context: .
+      additional_contexts:
+        webapp: ../dart-webapp
+    container_name: dart
+    # host network so mDNS can find the Chromecasts
+    network_mode: host
+    environment:
+      - PORT=8687
+      # what the TV loads – must be reachable from the LAN
+      - PUBLIC_URL=http://192.168.50.12:8687
+      - TZ=Atlantic/Reykjavik
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
